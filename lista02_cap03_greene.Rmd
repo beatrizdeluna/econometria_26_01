@@ -1,0 +1,85 @@
+---
+title: "Lista 02"
+author: "Beatriz de Luna Barreto"
+date: "2026-03-22"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readxl)
+library(dplyr)
+
+
+```
+
+# Parte prática: Greene, Capítulo 3
+
+Importação do banco de dados.
+
+```{r}
+dados <- read_excel("exercicio_Greene_aplication_pag_89_90.xlsx")
+
+dados_limpos <- data.frame(
+  education  = as.numeric(dados[[2]]),
+  wage       = as.numeric(dados[[3]]),
+  experience = as.numeric(dados[[4]]),
+  ability    = as.numeric(dados[[5]]),
+  mother     = as.numeric(dados[[6]]),
+  father     = as.numeric(dados[[7]]),
+  siblings   = as.numeric(dados[[8]])
+)
+```
+
+# (a) Regressão: y em X1
+
+```{r}
+reg_x1 <- lm(wage ~ education + experience + ability, data = dados_limpos)
+summary(reg_x1)
+```
+
+# (b) Regressão: y em X1 e X2
+
+```{r}
+reg_full <- lm(wage ~ education + experience + ability + 
+                 mother + father + siblings, data = dados_limpos)
+summary(reg_full)
+```
+
+# (c) Regressar X2 em X1 (Resíduos X2*)
+
+```{r}
+res_mother   <- resid(lm(mother ~ education + experience + ability, data = dados_limpos))
+res_father   <- resid(lm(father ~ education + experience + ability, data = dados_limpos))
+res_siblings <- resid(lm(siblings ~ education + experience + ability, data = dados_limpos))
+
+cat("Médias dos resíduos (devem ser zero):\n")
+print(mean(res_mother))
+print(mean(res_father))
+print(mean(res_siblings))
+```
+
+# (d) Cálculo do R² 
+
+```{r}
+y <- dados_limpos$wage
+y_hat <- fitted(reg_full)
+R2_com_const <- 1 - sum((y - y_hat)^2) / sum((y - mean(y))^2)
+
+# Modelo sem constante
+reg_sem_const <- lm(wage ~ education + experience + ability + 
+                      mother + father + siblings - 1, data = dados_limpos)
+y_hat2 <- fitted(reg_sem_const)
+R2_sem_const <- 1 - sum((y - y_hat2)^2) / sum((y - mean(y))^2)
+
+cat("\nR2 com constante:", R2_com_const)
+cat("\nR2 sem constante:", R2_sem_const)
+```
+
+# (e) Coeficiente de Determinação Ajustado ($R^2$ Ajustado)
+
+```{r}
+r2_adj_valor <- summary(reg_full)$adj.r.squared
+cat("O R2 Ajustado é:", round(r2_adj_valor, 5))
+```
