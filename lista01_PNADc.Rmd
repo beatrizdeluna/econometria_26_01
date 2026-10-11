@@ -1,0 +1,145 @@
+---
+title: "Q8 Lista 01"
+author: "Beatriz de Luna Barreto"
+date: "2026-03-15"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+```
+
+# Parte prática: Estatísticas descritivas PNADC
+
+```{r}
+dados <- read.csv("amostra_ex1.csv")
+
+# Criando variável de sexo com rótulo
+dados <- dados %>%
+  mutate(sexo = case_when(
+    V2007 == 1 ~ "Homem",
+    V2007 == 2 ~ "Mulher"
+  ))
+```
+
+---
+
+# a) Esperança da idade
+
+A esperança matemática de uma variável aleatória corresponde à média dos valores observados.
+
+```{r}
+mean(dados$V2009, na.rm = TRUE)
+```
+
+---
+
+# b) Esperança da idade condicional ao sexo
+
+A esperança condicional é definida como E(X|Y=y) = sum(x * P(X=x|Y=y)) (termos populacionais).
+E(idade|homem) = idade média dos homens e E(idade|mulher) = idade média das mulheres serão as esperanças condicionais da idade por sexo.
+
+```{r}
+
+dados %>%
+  group_by(V2007) %>%
+  summarise(media_idade = mean(V2009, na.rm = TRUE))
+
+```
+
+---
+
+# c) Variância da idade
+
+É a dispersão dos valores em torno da média. No R, usa-se a função var:
+
+```{r}
+var(dados$V2009, na.rm = TRUE)
+```
+
+---
+
+# d) Variância da idade condicional ao sexo
+
+
+```{r}
+dados %>%
+  group_by(V2007) %>%
+  summarise(var_idade = var(V2009, na.rm = TRUE))
+
+```
+
+---
+
+# e) Variável binária de sexo
+
+```{r}
+dados$sexo_bin <- ifelse(dados$V2007 == "Homem", 1, 0)
+
+mean(dados$sexo_bin, na.rm = TRUE)
+```
+
+A média dessa variável representa a proporção de homens na amostra (49,5%).
+
+---
+
+# f) Renda média do trabalho principal
+
+```{r}
+mean(dados$VD4016, na.rm = TRUE)
+```
+
+O número de observações é menor que 400 porque indivíduos desocupados ou fora da força de trabalho não possuem rendimento do trabalho principal. Nesses casos, a variável aparece como NA no banco de dados e não contribui para o cálculo da renda média.
+
+
+# g) Renda média condicional ao sexo
+
+```{r}
+renda_por_sexo <- dados %>%
+  group_by(V2007) %>%
+  summarise(renda_media = mean(VD4016, na.rm = TRUE))
+
+print(renda_por_sexo)
+```
+
+A comparação das médias permite observar uma renda média ligeiramente superior para mulheres em relação à dos homens na amostra avaliada.
+
+---
+
+# h) Distribuição da renda
+
+Distribuição da renda para toda a amostra:
+
+```{r}
+ggplot(dados, aes(x = VD4016)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black", na.rm = TRUE) +
+  labs(title = "Distribuição da renda do trabalho principal",
+       x = "Renda",
+       y = "Frequência")
+```
+
+Distribuição da renda para homens.
+
+```{r}
+ggplot(dados %>% filter(V2007 == "Homem"),
+       aes(x = VD4016)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black", na.rm = TRUE) +
+  labs(title = "Distribuição da renda - Homens",
+       x = "Renda",
+       y = "Frequência")
+```
+
+Distribuição da renda para mulheres.
+
+```{r}
+ggplot(dados %>% filter(V2007 == "Mulher"),
+       aes(x = VD4016)) +
+  geom_histogram(bins = 30, fill = "pink", color = "black", na.rm = TRUE) +
+  labs(title = "Distribuição da renda - Mulheres",
+       x = "Renda",
+       y = "Frequência")
+```
