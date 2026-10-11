@@ -8,7 +8,7 @@ Este repositório armazena a minha coleção de exercícios práticos implementa
 | :--- | :--- |
 | **`lista01_PNADc/`** | Estatísticas Descritivas a partir da PNADc |
 | **`lista02_cap03_greene/`** | Regressão múltipla e álgebra de matricial (Greene / Koop & Tobias) |
-| **`lista03_cap03p2_greene/`** | Estimação com matrizes particionadas e manipulação de dados em painel (Greene / Koop & Tobias) |
+| **`lista03_cap05_greene/`** | Estimação com matrizes particionadas e manipulação de dados em painel (Greene / Koop & Tobias) |
 | **`lista03_cap08_greene/`** | Variáveis instrumentais e mínimos quadrados em dois estágios |
 
 ## Tecnologias Utilizadas
