@@ -1,0 +1,106 @@
+---
+title: "Lista 04"
+author: "Beatriz de Luna Barreto"
+date: "2026-05-06"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if(!require(car)) install.packages("car")
+library(car)
+
+
+```
+
+# Parte prática: Greene, Capítulo 5
+# Questão 5.1
+Importação do banco de dados.
+
+```{r}
+df <- read.csv("dados_04.csv")
+```
+
+# (a) Regressão completa
+
+```{r}
+modelo_completo <- lm(lnwage ~ educ + exper + ability + edmae + edpai + dbroken + siblings, data = df)
+summary(modelo_completo)
+```
+
+# (b) b. Teste F Global
+
+```{r}
+cat("Estatística F Global:", summary(modelo_completo)$fstatistic[1])
+```
+REJEITA-SE $H_0$. O p-valor global é inferior a $2,2 \times 10^{-16}$. Como o p-valor é muito próximo de zero, o modelo como um todo é estatisticamente significativo.
+
+# (c) Teste F Conjunto para X2 (Hipótese: coeficientes de X2 = 0)
+
+```{r}
+modelo_restrito <- lm(lnwage ~ educ + exper + ability, data = df)
+teste_f_X2 <- anova(modelo_restrito, modelo_completo)
+print(teste_f_X2)
+
+```
+REJEITA-SE $H_0$. O p-valor do teste de comparação de modelos é $1,99 \times 10^{-11}$. Isso indica que as variáveis de histórico familiar (edmae, edpai, dbroken e siblings), quando tomadas em conjunto, possuem um efeito significativo sobre o salário
+
+# (d) Teste de Wald para X2
+
+```{r}
+teste_wald_X2 <- linearHypothesis(modelo_completo, 
+                                  c("edmae = 0", "edpai = 0", "dbroken = 0", "siblings = 0"))
+print(teste_wald_X2)
+
+```
+REJEITA-SE $H_0$. Assim como no teste anterior, o p-valor resultante de $1,99 \times 10^{-11}$ é muito menor que o nível de significância de 0,05. Portanto, rejeita-se a hipótese de que todos os coeficientes dessas variáveis sejam simultaneamente iguais a zero.
+
+# Questão 5.3: Análise de Gastos com Gasolina
+
+Nesta seção, realizamos a estimação do modelo de demanda por gasolina e testamos a significância conjunta das variáveis de preços de bens duráveis, não duráveis e serviços.
+
+```{r}
+### 1. Dados
+dados <- data.frame(
+  YEAR = c(1953:2004),
+  GASEXP = c(7.4,7.8,8.6,9.4,10.2,10.6,11.3,12.0,12.0,12.6,13.0,13.6,14.8,16.0,17.1,18.6,20.5,21.9,23.2,24.4,28.1,36.1,39.7,43.0,46.9,50.1,66.2,86.7,97.9,94.1,93.1,94.6,97.2,80.1,85.4,88.3,98.6,111.2,108.5,112.4,114.1,116.2,120.2,130.4,134.4,122.4,137.9,175.7,171.6,163.4,191.3,224.5),
+  POP = c(159565,162391,165275,168221,171274,174141,177130,180760,183742,186590,189300,191927,194347,196599,198752,200745,202736,205089,207692,209924,211939,213898,215981,218086,220289,222629,225106,227726,230008,232218,234333,236394,238506,240683,242843,245061,247387,250181,253530,256922,260282,263455,266588,269714,272958,276154,279328,282429,285366,288217,291073,293951),
+  GASP = c(16.668,17.029,17.210,17.729,18.497,18.316,18.576,19.112,18.924,19.043,18.997,18.873,19.587,20.038,20.700,21.005,21.696,21.890,22.050,22.336,24.473,33.059,35.278,36.777,38.907,40.597,54.406,75.509,84.018,79.768,77.160,76.005,76.619,60.175,62.488,63.017,68.837,78.385,77.338,77.040,76.257,76.614,77.826,82.596,82.579,71.874,78.207,100.000,96.289,90.405,105.154,123.901),
+  INCOME = c(8883,8685,9137,9436,9534,9343,9738,9770,9843,10226,10398,11051,11430,11981,12418,12932,13060,13567,14008,14270,15309,15074,15555,15693,15991,16674,16843,16711,17046,17429,17659,18922,19622,19944,19802,20682,21048,21379,21129,21505,21515,21797,22100,22506,22944,24079,24464,25380,25449,26352,26437,27113),
+  PNC = c(47.2,46.5,44.8,46.1,48.5,50.0,52.2,51.5,51.5,51.3,51.0,50.9,49.7,48.8,49.3,50.7,51.5,53.0,55.2,54.7,54.8,57.9,62.9,66.9,70.4,75.8,81.8,88.4,93.7,97.4,99.9,102.8,106.1,110.6,114.6,116.9,119.2,121.0,125.3,128.4,131.5,136.0,139.0,141.4,141.7,140.7,139.6,139.6,138.9,137.3,134.7,133.9),
+  PUC = c(26.7,22.7,21.5,20.7,23.2,24.0,26.8,25.0,26.0,28.4,28.7,30.0,29.8,29.0,29.9,30.7,30.9,31.2,33.0,33.1,35.2,36.7,43.8,50.3,54.7,55.8,60.2,62.3,76.9,88.8,98.7,112.5,113.7,108.8,113.1,118.0,120.4,117.6,118.1,123.2,133.9,141.7,156.5,157.0,151.1,150.6,152.0,155.8,158.7,152.0,142.9,133.3),
+  PPT = c(16.8,18.0,18.5,19.2,19.9,20.9,21.5,22.2,23.2,24.0,24.3,24.7,25.2,26.1,27.4,28.7,30.9,35.2,37.8,39.3,39.7,40.6,43.5,47.8,50.0,51.5,54.9,69.0,85.6,94.9,99.5,105.7,110.5,117.0,121.1,123.3,129.5,142.6,148.9,151.4,167.0,172.0,175.9,181.9,186.7,190.3,197.7,209.6,210.6,207.4,209.3,209.1),
+  PD = c(37.7,36.8,36.1,36.1,37.2,37.8,38.4,38.1,38.1,38.5,38.6,39.0,38.8,38.9,39.4,40.7,42.2,44.1,46.0,46.9,48.1,51.5,57.4,60.9,64.4,68.6,75.4,83.0,89.6,95.1,99.8,105.1,106.8,106.6,108.2,110.4,112.2,113.4,116.0,118.6,121.3,124.8,128.0,129.4,128.7,127.6,126.0,125.4,124.6,121.4,117.5,114.8),
+  PN = c(29.7,29.7,29.5,29.9,30.9,31.7,31.5,32.0,32.2,32.5,32.9,33.2,33.8,35.1,35.7,37.1,38.9,40.8,42.1,43.5,47.5,54.0,58.3,60.5,64.0,68.6,77.2,87.6,95.2,97.8,99.7,102.5,104.8,103.5,107.5,111.8,118.2,126.0,130.3,132.8,135.1,136.8,139.3,143.5,146.4,146.9,151.2,158.2,160.6,161.1,165.3,172.2),
+  PS = c(19.4,20.0,20.4,20.9,21.8,22.6,23.3,24.1,24.5,25.0,25.5,26.0,26.6,27.6,28.8,30.3,32.4,35.0,37.0,38.4,40.1,43.8,48.0,52.0,56.0,60.8,67.5,77.9,88.1,96.0,99.4,104.6,109.9,115.4,120.2,125.7,131.9,139.2,146.3,152.0,157.9,163.1,168.7,174.1,179.4,184.2,188.8,195.3,203.4,209.8,216.5,222.8)
+)
+
+### 2. Variáveis
+dados$g <- 1000000 * (dados$GASEXP / (dados$GASP * dados$POP))
+dados$ln_g <- log(dados$g)
+dados$ln_pg <- log(dados$GASP)
+dados$ln_inc <- log(dados$INCOME)
+dados$ln_pnc <- log(dados$PNC)
+dados$ln_puc <- log(dados$PUC)
+dados$ln_ppt <- log(dados$PPT)
+dados$ln_pd <- log(dados$PD)
+dados$ln_pn <- log(dados$PN)
+dados$ln_ps <- log(dados$PS)
+dados$TIME <- dados$YEAR - 1952
+
+### 3. Modelo Irrestrito
+modelo_completo <- lm(ln_g ~ ln_pg + ln_inc + ln_pnc + ln_puc + ln_ppt + 
+                        TIME + ln_pd + ln_pn + ln_ps, data = dados)
+
+### 4. Teste F
+teste_f <- linearHypothesis(modelo_completo, c("ln_pd = 0", "ln_pn = 0", "ln_ps = 0"))
+print(teste_f)
+
+### 5. Modelo Restrito
+modelo_final <- lm(ln_g ~ ln_pg + ln_inc + ln_pnc + ln_puc + ln_ppt + TIME, data = dados)
+summary(modelo_final)
+
+```
+
+Ao realizar o teste de hipótese conjunta para os três índices de preços agregados ($ln P_d$, $ln P_n$ e $ln P_s$), temos que F: $23,246$p-valor ($Pr(>F)$): $5,02 \times 10^{-9}$ (ou $0,00000000502$). Logo, como o p-valor é muito baixo ($p < 0,001$), rejeitamos a hipótese nula ao nível de significância de 5%.Isso significa que, estatisticamente, os coeficientes $\delta_d, \delta_n$ e $\delta_s$ não são simultaneamente iguais a zero. Portanto, os três índices de preços agregados (bens duráveis, não duráveis e serviços) são determinantes significativos da demanda por gasolina no modelo irrestrito apresentado.
