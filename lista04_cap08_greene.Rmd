@@ -1,0 +1,38 @@
+---
+title: "Lista IV Prática"
+author: "Beatriz de Luna Barreto"
+date: "2026-07-02"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+if(!require(haven)) install.packages("haven")
+library(haven)
+library(AER)
+
+dados_dta <- read_dta("TableF8-1.dta")
+
+dados_dta$exp2 <- dados_dta$exp^2
+```
+
+## (a) e (b): OLS e 2SLS
+
+```{r cars}
+# Modelo MQO (OLS)
+modelo_ols_dta <- lm(lwage ~ wks + exp + exp2 + occ + ind + south + smsa + ms + blk, data = dados_dta)
+summary(modelo_ols_dta)
+
+# Modelo 2SLS (ivreg)
+modelo_2sls_dta <- ivreg(lwage ~ wks + exp + exp2 + occ + ind + south + smsa + ms + blk | 
+                           exp + exp2 + occ + ind + south + smsa + ms + blk + ed + union + fem, 
+                         data = dados_dta)
+summary(modelo_2sls_dta)
+
+```
+# (c): Relevância dos Instrumentos (Primeiro Estágio)
+
+```{r}
+primeiro_estagio_dta <- lm(wks ~ exp + exp2 + occ + ind + south + smsa + ms + blk + ed + union + fem, data = dados_dta)
+linearHypothesis(primeiro_estagio_dta, c("ed = 0", "union = 0", "fem = 0"))
+```
+
